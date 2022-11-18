@@ -18,7 +18,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <string.h>
 #include "quest.h"
 #include "level.h"
@@ -35,7 +34,7 @@ static int top = -1;
 static struct {
     quest_t* current_quest;
     int next_level;
-    bool abort_quest;
+    int abort_quest;
 } stack[STACK_MAX]; /* one can stack quests */
 
 static void push_appropriate_scene(const char *str);
@@ -57,7 +56,7 @@ void quest_init(void *path_to_qst_file)
 
     stack[top].current_quest = quest_load(filepath);
     stack[top].next_level = 0;
-    stack[top].abort_quest = false;
+    stack[top].abort_quest = FALSE;
 
     logfile_message("Pushed quest \"%s\" (\"%s\") onto the quest stack...", stack[top].current_quest->file, stack[top].current_quest->name);
 }
@@ -115,7 +114,7 @@ void quest_update()
 void quest_abort()
 {
     if(top >= 0)
-        stack[top].abort_quest = true;
+        stack[top].abort_quest = TRUE;
 }
 
 /*
@@ -165,8 +164,10 @@ void push_appropriate_scene(const char *str)
             scenestack_push(storyboard_get_scene(SCENE_LANGSELECT), NULL);
         else if(str_icmp(str, "<credits>") == 0)
             scenestack_push(storyboard_get_scene(SCENE_CREDITS), NULL);
-        else if(str_icmp(str, "<stage_select>") == 0)
-            scenestack_push(storyboard_get_scene(SCENE_STAGESELECT), NULL);
+		else if(str_icmp(str, "<game_over>") == 0)
+            scenestack_push(storyboard_get_scene(SCENE_GAMEOVER), NULL);
+		else if(str_icmp(str, "<intro>") == 0)
+            scenestack_push(storyboard_get_scene(SCENE_INTRO), NULL);
         else
             fatal_error("Quest error: unrecognized symbol '%s'", str);
     }

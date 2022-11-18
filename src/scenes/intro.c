@@ -36,14 +36,14 @@
 #include "../entities/sfx.h"
 
 /* private data */
-#define INTRO_TIMEOUT       3.0f
-#define INTRO_FADETIME      0.5f
+#define INTRO_TIMEOUT       0.25f
+#define INTRO_FADETIME      0.0f
 #define INTRO_FONT          "GoodNeighbors"
 #define INTRO_TEXT          "Open Surge Engine\nopensurge2d.org"
-#define PRIMARY_COLOR       "424c6e"
+#define PRIMARY_COLOR       "000000"
 #define SECONDARY_COLOR     "657392"
 static float elapsed_time;
-static bool debug_mode;
+static int debug_mode;
 static font_t* fnt;
 static input_t* in;
 static image_t* box;
@@ -62,7 +62,7 @@ void intro_init(void *foo)
 
     /* initialize variables */
     elapsed_time = 0.0f;
-    debug_mode = false;
+    debug_mode = FALSE;
     in = input_create_user(NULL);
 
     /* create box */
@@ -127,15 +127,15 @@ void intro_update()
 
     /* secret */
     if(input_button_pressed(in, IB_RIGHT)) {
-        if(!debug_mode && ++cnt == 3) {
+        if(!debug_mode/*  && ++cnt == 3 */) {
             sound_play(SFX_SECRET);
             elapsed_time += INTRO_TIMEOUT;
-            debug_mode = true;
+            debug_mode = TRUE;
             cnt = 0;
         }
     }
-    else if(any_button_pressed(in) && cnt < 3)
-        cnt = 0;
+/*     else if(any_button_pressed(in) && cnt < 3)
+        cnt = 0; */
 }
 
 /*
@@ -148,8 +148,8 @@ void intro_render()
     const float angle = 18.45f / 57.2957795131f;
 
     image_clear(color_hex(PRIMARY_COLOR));
-    image_draw_rotated(box, VIDEO_SCREEN_W / 2, VIDEO_SCREEN_H / 2, image_width(box)/2, image_height(box)/2, angle, IF_NONE);
-    font_render(fnt, camera);
+    /* image_draw_rotated(box, VIDEO_SCREEN_W / 2, VIDEO_SCREEN_H / 2, image_width(box)/2, image_height(box)/2, angle, IF_NONE);
+    font_render(fnt, camera); */
 }
 
 

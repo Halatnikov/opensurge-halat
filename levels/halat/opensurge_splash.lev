@@ -1,0 +1,9 @@
+name "Open Surge Splash"
+author ""
+version "1.0"
+requires "0.6.1"
+theme "themes/none.brk"
+bgtheme "themes/halat/opensurge_splash.bg"
+setup "Open Surge Splash"
+players "None"
+readonly

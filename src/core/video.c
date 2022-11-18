@@ -58,7 +58,7 @@ static void apply_display_transform(ALLEGRO_DISPLAY* display, image_t* backbuffe
 static void set_display_icon(ALLEGRO_DISPLAY* display);
 
 /* private stuff */
-#define DEFAULT_SCREEN_SIZE     (v2d_t){ 426, 240 }    /* this is set on stone! Picked a 16:9 resolution */
+#define DEFAULT_SCREEN_SIZE     (v2d_t){ 320, 240 }    /* this is set on stone! Picked a 16:9 resolution */
 static const char WINDOW_TITLE[] = GAME_TITLE " " GAME_VERSION_STRING;
 
 /* video manager */

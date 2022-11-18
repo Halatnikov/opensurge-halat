@@ -57,7 +57,7 @@ static float scene_time;
 static bgtheme_t *bgtheme;
 static bool stageselect_enable_debug;
 static music_t* music;
-static const int OFFSET_X = 60;
+static const int OFFSET_X = 36;
 
 /* private methods */
 static void save_preferences();
@@ -1108,14 +1108,14 @@ group_t *create_grouptree()
     /*group_addchild(graphics, group_smooth_create());*/
     (void)group_smooth_create;
     group_addchild(graphics, group_fps_create());
+	group_addchild(graphics, group_gamepad_create());
 
     /* section: game */
     game = group_game_create();
-    group_addchild(game, group_gamepad_create());
     group_addchild(game, group_stageselect_create());
-    group_addchild(game, group_changelanguage_create());
+    /* group_addchild(game, group_changelanguage_create()); */
     group_addchild(game, group_credits_create());
-    group_addchild(game, group_donate_create());
+    /* group_addchild(game, group_donate_create()); */
 
     /* section: root */
     root = group_root_create();
