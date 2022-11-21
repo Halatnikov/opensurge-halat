@@ -20,7 +20,7 @@ object "Open Surge Splash" is "setup"
 	splash = spawn("Splash");
 }
 
-object "Powered by" is "entity"
+object "Powered by" is "entity" , "private", "detached"
 {
 	transform = Transform();
     text = Text("GoodNeighbors");
@@ -33,7 +33,7 @@ object "Powered by" is "entity"
     }
 }
 
-object "Website" is "entity"
+object "Website" is "entity" , "private", "detached"
 {
 	transform = Transform();
     text = Text("BoxyBold");
@@ -46,7 +46,7 @@ object "Website" is "entity"
     }
 }
 
-object "Versions" is "entity"
+object "Versions" is "entity" , "private", "detached"
 {
 	transform = Transform();
     text = Text("GoodNeighbors");

@@ -12,6 +12,7 @@ ALLEGRO_VERSION "5.2.8.0"
 OPTIONS_GRAPHICS            "SETTINGS"
 OPTIONS_GAME                "OTHER"
 OPTIONS_STAGESELECT         "Debug stage select"
+CREDITS_TITLE               "<color=$COLOR_TITLE>OPEN SURGE CREDITS</color>"
 
 
 
@@ -48,7 +49,6 @@ STAGESELECT_PAGE            "page $1/$2"
 STAGESELECT_ACT             "Zone"
 
 // Credits
-CREDITS_TITLE               "<color=$COLOR_TITLE>CREDITS</color>"
 CREDITS_BACK                "Press <color=$COLOR_HIGHLIGHT>$INPUT_FIRE4</color> to go back"
 CREDITS_HEADER              "<color=$COLOR_HIGHLIGHT>$GAME_NAME version $GAME_VERSION</color>\npowered by $ENGINE_NAME\n$ENGINE_WEBSITE"
 CREDITS_ACTIVE              "<color=$COLOR_HIGHLIGHT>People</color>"
@@ -320,44 +320,5 @@ GAMEOVER_PART2              "OVER"
 // Time Over
 TIMEOVER_PART1              "TIME"
 TIMEOVER_PART2              "OVER"
-
-
-
-//
-// Section: special codes
-//
-
-//
-// Translators:
-//
-// Erase this section from your translation.
-// Language files other than English should
-// NOT include the codes below.
-//
-
-// Colors
-COLOR_TITLE                 "ff8800"
-COLOR_HIGHLIGHT             "ffee11"
-COLOR_HUD                   "ffff00"
-COLOR_HUDDANGER             "ff0000"
-COLOR_EDITOR_HIGHLIGHT      "ffa060"
-
-// Input
-INPUT_DIRECTIONAL           "${INPUT_${INPUT_TYPE}_DIRECTIONAL}"
-INPUT_UP                    "${INPUT_${INPUT_TYPE}_UP}"
-INPUT_RIGHT                 "${INPUT_${INPUT_TYPE}_RIGHT}"
-INPUT_DOWN                  "${INPUT_${INPUT_TYPE}_DOWN}"
-INPUT_LEFT                  "${INPUT_${INPUT_TYPE}_LEFT}"
-INPUT_FIRE1                 "${INPUT_${INPUT_TYPE}_FIRE1}"
-INPUT_FIRE2                 "${INPUT_${INPUT_TYPE}_FIRE2}"
-INPUT_FIRE3                 "${INPUT_${INPUT_TYPE}_FIRE3}"
-INPUT_FIRE4                 "${INPUT_${INPUT_TYPE}_FIRE4}"
-INPUT_FIRE5                 "${INPUT_${INPUT_TYPE}_FIRE5}"
-INPUT_FIRE6                 "${INPUT_${INPUT_TYPE}_FIRE6}"
-INPUT_FIRE7                 "${INPUT_${INPUT_TYPE}_FIRE7}"
-INPUT_FIRE8                 "${INPUT_${INPUT_TYPE}_FIRE8}"
-
-// Backward compatibility
-HUD_COLLECTIBLES            "$HUD_POWER"
 
 // EOF
