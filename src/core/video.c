@@ -59,7 +59,7 @@ static void set_display_icon(ALLEGRO_DISPLAY* display);
 
 
 /* Backbuffer */
-#define DEFAULT_SCREEN_WIDTH  426 /* this is set on stone! Picked a 16:9 resolution */
+#define DEFAULT_SCREEN_WIDTH  320 /* this is set on stone! Picked a 16:9 resolution */
 #define DEFAULT_SCREEN_HEIGHT 240
 static int game_screen_width = DEFAULT_SCREEN_WIDTH; /* the width of the backbuffer during regular gameplay (i.e., not in the level editor) */
 static int game_screen_height = DEFAULT_SCREEN_HEIGHT; /* the height of the backbuffer during regular gameplay */
