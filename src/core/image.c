@@ -33,7 +33,10 @@
 #include <allegro5/allegro_primitives.h>
 
 /* convert imageflags_t to ALLEGRO_FLIP flags */
-#define FLIPPY(flags) ((((flags) & IF_HFLIP) ? ALLEGRO_FLIP_HORIZONTAL : 0) | (((flags) & IF_VFLIP) ? ALLEGRO_FLIP_VERTICAL : 0))
+#define FLIPPY(flags) ((((flags) & IF_HFLIP) != 0) * ALLEGRO_FLIP_HORIZONTAL + (((flags) & IF_VFLIP) != 0) * ALLEGRO_FLIP_VERTICAL)
+
+/* check if an expression is a power of two */
+#define IS_POWER_OF_TWO(n) (((n) & ((n) - 1)) == 0)
 
 /* image type */
 struct image_t {
@@ -118,28 +121,34 @@ void image_save(const image_t* img, const char *path)
  */
 image_t* image_create(int width, int height)
 {
+    ALLEGRO_BITMAP* bmp;
+    ALLEGRO_STATE state;
     image_t* img;
 
+    if(width > MAX_IMAGE_SIZE || height > MAX_IMAGE_SIZE)
+        logfile_message("WARNING: image_create(%d,%d) - larger than %dx%d", width, height, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE);
+
     if(width <= 0 || height <= 0) {
-        fatal_error("Can't create image of size %d x %d", width, height);
+        fatal_error("Can't create image of size %dx%d", width, height);
         return NULL;
     }
 
+    if(NULL == (bmp = al_create_bitmap(width, height))) {
+        logfile_message("ERROR: image_create(%d,%d) failed", width, height);
+        return NULL;
+    }
+
+    al_store_state(&state, ALLEGRO_STATE_TARGET_BITMAP);
+    al_set_target_bitmap(bmp);
+    al_clear_to_color(al_map_rgb(0, 0, 0));
+    al_restore_state(&state);
+
     img = mallocx(sizeof *img);
-    img->path = NULL;
+    img->data = bmp;
     img->w = width;
     img->h = height;
+    img->path = NULL;
     
-    if(NULL != (img->data = al_create_bitmap(img->w, img->h))) {
-        ALLEGRO_STATE state;
-        al_store_state(&state, ALLEGRO_STATE_TARGET_BITMAP);
-        al_set_target_bitmap(img->data);
-        al_clear_to_color(al_map_rgb(0, 0, 0));
-        al_restore_state(&state);
-    }
-    else
-        logfile_message("ERROR - image_create(%d,%d) failed", img->w, img->h);
-
     return img;
 }
 
@@ -309,6 +318,61 @@ image_t* image_snapshot()
 
     al_restore_state(&state);
     return img;
+}
+
+/*
+ * image_enable_linear_filtering()
+ * Enable linear filtering
+ */
+void image_enable_linear_filtering(image_t* img)
+{
+    ALLEGRO_STATE state;
+    al_store_state(&state, ALLEGRO_STATE_NEW_BITMAP_PARAMETERS);
+
+    ALLEGRO_BITMAP* root = img->data;
+    while(al_get_parent_bitmap(root) != NULL)
+        root = al_get_parent_bitmap(root);
+
+    int width = al_get_bitmap_width(root), height = al_get_bitmap_height(root);
+    bool is_pot = IS_POWER_OF_TWO(width) && IS_POWER_OF_TWO(height);
+    int mipmap = is_pot ? ALLEGRO_MIPMAP : 0;
+
+    int flags = al_get_bitmap_flags(img->data);
+    al_set_new_bitmap_flags(flags | (mipmap | ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR));
+    al_convert_bitmap(img->data);
+
+    /*
+
+    According to the Allegro docs, "if this bitmap is a sub-bitmap, then it,
+    its parent and all the sibling sub-bitmaps are also converted". Does
+    this mean that the parent (root) bitmap must be a POT texture? The size
+    of the sub-bitmaps shouldn't matter.
+
+    ALLEGRO_MIPMAP
+    "This can only be used for bitmaps whose width and height is a power of two"
+
+    https://liballeg.org/a5docs/trunk/graphics.html#al_convert_bitmap
+    https://liballeg.org/a5docs/trunk/graphics.html#al_set_new_bitmap_flags
+
+    */
+
+    al_restore_state(&state);
+}
+
+/*
+ * image_disable_linear_filtering()
+ * Disable linear filtering
+ */
+void image_disable_linear_filtering(image_t* img)
+{
+    ALLEGRO_STATE state;
+    al_store_state(&state, ALLEGRO_STATE_NEW_BITMAP_PARAMETERS);
+
+    int flags = al_get_bitmap_flags(img->data);
+    al_set_new_bitmap_flags(flags & ~(ALLEGRO_MIPMAP | ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR));
+    al_convert_bitmap(img->data);
+
+    al_restore_state(&state);
 }
 
 /*
@@ -509,6 +573,22 @@ void image_draw_scaled(const image_t* src, int x, int y, v2d_t scale, imageflags
     );
 }
 
+/*
+ * image_draw_scaled_trans()
+ * Draw scaled with alpha
+ */
+void image_draw_scaled_trans(const image_t* src, int x, int y, v2d_t scale, float alpha, imageflags_t flags)
+{
+    float a = clip01(alpha);
+    ALLEGRO_COLOR tint = al_map_rgba_f(a, a, a, a);
+
+    al_draw_tinted_scaled_bitmap(
+        src->data, tint,
+        0.0f, 0.0f, src->w, src->h,
+        x, y, scale.x * src->w, scale.y * src->h,
+        FLIPPY(flags)
+    );
+}
 
 /*
  * image_draw_rotated()
@@ -521,16 +601,38 @@ void image_draw_rotated(const image_t* src, int x, int y, int cx, int cy, float 
     al_draw_rotated_bitmap(src->data, cx, cy, x, y, -radians, FLIPPY(flags));
 }
 
+/*
+ * image_draw_rotated_trans()
+ * Draws a rotated image with alpha
+ */
+void image_draw_rotated_trans(const image_t* src, int x, int y, int cx, int cy, float radians, float alpha, imageflags_t flags)
+{
+    float a = clip01(alpha);
+    ALLEGRO_COLOR tint = al_map_rgba_f(a, a, a, a);
+
+    al_draw_tinted_rotated_bitmap(src->data, tint, cx, cy, x, y, -radians, FLIPPY(flags));
+}
 
 /*
  * image_draw_scaled_rotated()
- * Draw scaled and rotated ;)
+ * Draws a scaled and rotated image
  */
 void image_draw_scaled_rotated(const image_t* src, int x, int y, int cx, int cy, v2d_t scale, float radians, imageflags_t flags)
 {
     al_draw_scaled_rotated_bitmap(src->data, cx, cy, x, y, scale.x, scale.y, -radians, FLIPPY(flags));
 }
 
+/*
+ * image_draw_scaled_rotated_trans()
+ * Draws a scaled and rotated image with alpha
+ */
+void image_draw_scaled_rotated_trans(const image_t* src, int x, int y, int cx, int cy, v2d_t scale, float radians, float alpha, imageflags_t flags)
+{
+    float a = clip01(alpha);
+    ALLEGRO_COLOR tint = al_map_rgba_f(a, a, a, a);
+
+    al_draw_tinted_scaled_rotated_bitmap(src->data, tint, cx, cy, x, y, scale.x, scale.y, -radians, FLIPPY(flags));
+}
  
 /*
  * image_draw_trans()
@@ -540,7 +642,9 @@ void image_draw_scaled_rotated(const image_t* src, int x, int y, int cx, int cy,
 void image_draw_trans(const image_t* src, int x, int y, float alpha, imageflags_t flags)
 {
     float a = clip01(alpha);
-    al_draw_tinted_bitmap(src->data, al_map_rgba_f(a, a, a, a), x, y, FLIPPY(flags));
+    ALLEGRO_COLOR tint = al_map_rgba_f(a, a, a, a);
+
+    al_draw_tinted_bitmap(src->data, tint, x, y, FLIPPY(flags));
 }
 
 /*
@@ -549,18 +653,81 @@ void image_draw_trans(const image_t* src, int x, int y, float alpha, imageflags_
  */
 void image_draw_lit(const image_t* src, int x, int y, color_t color, imageflags_t flags)
 {
-    /* TODO: shader for specific contours */
     ALLEGRO_STATE state;
     al_store_state(&state, ALLEGRO_STATE_BLENDER);
-    al_draw_bitmap(src->data, x, y, FLIPPY(flags));
-    al_set_separate_blender(
-        ALLEGRO_ADD, ALLEGRO_CONST_COLOR, ALLEGRO_INVERSE_CONST_COLOR,
-        ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO
+
+    al_set_blend_color(color._color);
+    al_set_blender(
+
+        /*
+
+        this works with a source image with pre-multiplied alpha:
+
+            x = dx * (1 - sa) + (sx * sa) * cc
+
+        replace x by r, g, b, a
+
+        x is the result of the blending
+        dx is destination color
+        sx is the source color
+        sa is the source alpha
+        (sx * sa) is the source color with pre-multiplied alpha
+        cc is a constant color
+
+        if sa = 1 (fully opaque), then we'll have x = sx * cc
+        if sa = 0 (fully transparent), then we'll have x = dx
+
+        */
+
+        ALLEGRO_ADD, ALLEGRO_CONST_COLOR, ALLEGRO_INVERSE_ALPHA
     );
-    al_set_blend_color(al_map_rgba_f(0.65f, 0.65f, 0.65f, 1.0f));
-    al_draw_filled_rectangle(x, y, x + src->w + 1.0f, y + src->h + 1.0f, color._color);
+    al_draw_bitmap(src->data, x, y, FLIPPY(flags));
+
+    al_set_blender(
+
+        /*
+
+        this second equation works as follows:
+
+            y = dy + (sy * sa) * cc
+
+        where dy = x is the result of the previous call to al_draw_bitmap()
+        and sy = sx is the source pixel of the bitmap that is being drawn.
+        Replace y by r, g, b, a.
+
+        let's analyze two cases:
+
+        1) suppose that sa = 1.0 (fully opaque pixel). This means that,
+           in the previous call to al_draw_bitmap(), we had x = sx * cc
+           as the result. Therefore, we'll have y = sx * cc + sx * cc =
+           2 * sx * cc now, which will give us a nice colored effect with
+           both additive and multiplicative blending.
+
+        2) suppose that sa = 0.0 (fully transparent pixel). This means that,
+           in the previous call to al_draw_bitmap(), we had x = dx as the
+           result. Therefore, we'll have y = dx now, which means that we'll
+           be preserving the background as-is.
+
+        we could modify the cc variable of this second equation for a more
+        refined control of the color. If we had two separate colors for each
+        equation, cc1 and cc2, then the result would be y = sx * (cc1 + cc2).
+        If cc2 = t * cc1 for some 0 < t < 1, then y' = (1 + t) * sx * cc1 <
+        2 * sx * cc1. Seems like overkill, though.
+
+        perhaps a better result would be achieved with y' = sx * cc + cc,
+        because multiplicative blending doesn't always look great depending
+        on the colors. How can we draw y'' = cc * sa? So far I don't see in
+        Allegro an op with a constant offset, neither a way to compute 1/sx.
+        Creating a temporary, single-colored bitmap could work. Is there an
+        easier way? We can draw a black silhouette with blending alone.
+
+        */
+
+        ALLEGRO_ADD, ALLEGRO_CONST_COLOR, ALLEGRO_ONE
+    );
+    al_draw_bitmap(src->data, x, y, FLIPPY(flags));
+
     al_restore_state(&state);
-    /*al_draw_rectangle(x, y, x + src->w + 1.0f, y + src->h + 1.0f, color._color, 2.0f);*/
 }
 
 /*
